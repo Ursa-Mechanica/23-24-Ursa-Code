@@ -12,14 +12,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Comparator;
 
-public class GrayscalePipeline extends OpenCvPipeline {
+public class ScreedVisionPipeline extends OpenCvPipeline {
 
     public boolean doThreshold = true;
     public int threshold = 140;
 
     Telemetry telemetry;
 
-    public GrayscalePipeline(Telemetry telemetry)
+    public ScreedVisionPipeline(Telemetry telemetry)
     {
         this.telemetry = telemetry;
     }
