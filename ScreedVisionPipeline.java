@@ -14,8 +14,9 @@ import java.util.Comparator;
 
 public class ScreedVisionPipeline extends OpenCvPipeline {
 
-    public boolean doThreshold = true;
+    public boolean isBlue = true;
     public int threshold = 140;
+    public int blur = 10;
 
     Telemetry telemetry;
 
@@ -43,32 +44,62 @@ public class ScreedVisionPipeline extends OpenCvPipeline {
     public Mat processFrame(Mat input) {
         contours = new ArrayList<>();
 
+        // Blur the image
+        Imgproc.blur(input, input, new Size(blur, blur), new Point(-1, -1));
+
+        // Isolate red/blue channel
         Imgproc.cvtColor(input, cbMat, Imgproc.COLOR_RGB2YCrCb);
-        Core.extractChannel(cbMat, cbMat, 2);
+        Core.extractChannel(cbMat, cbMat, ((isBlue) ? 2 : 1));
 
-        if (doThreshold) Imgproc.threshold(cbMat, thresholdMat, threshold, 255, Imgproc.THRESH_BINARY);
+        // Apply threshold value to isolate object
+        Imgproc.threshold(cbMat, thresholdMat, threshold, 255, Imgproc.THRESH_BINARY);
 
+        // Erode and dilate filtered image
         Imgproc.erode(thresholdMat, thresholdMat, erodeElement);
         Imgproc.erode(thresholdMat, thresholdMat, erodeElement);
-
         Imgproc.dilate(thresholdMat, thresholdMat, dilateElement);
         Imgproc.dilate(thresholdMat, thresholdMat, dilateElement); 
 
+        // Find contours around all objects
         Imgproc.findContours(thresholdMat, contours, hierarchy, Imgproc.RETR_TREE, Imgproc.CHAIN_APPROX_SIMPLE);
 
+        // Orders list of contours from largest to smallest (finds largest contour)
         contours.sort(new Comparator<MatOfPoint>() {
             public int compare(MatOfPoint c1, MatOfPoint c2) {
                 return (int) (Imgproc.contourArea(c2) - Imgproc.contourArea(c1));
             }
         });
 
+        // Approxmiate the number of polylines in the largest contour
         MatOfPoint2f m2p = new MatOfPoint2f(contours.get(0).toArray());
         Imgproc.approxPolyDP(m2p, m2p, 0.02 * Imgproc.arcLength(m2p, true), true);
         telemetry.addData("Approx Poly Count", m2p.size().height);
+
+        // Find centroid of the largest area
+        double centroidX = Imgproc.moments(contours.get(0)).m10 / Imgproc.moments(contours.get(0)).m00;
+        double centroidY = Imgproc.moments(contours.get(0)).m01 / Imgproc.moments(contours.get(0)).m00;
+
+        // Detect position of centroid
+        // TODO: Make this cleaner
+        int position = 0;
+        if (centroidX < (input.width() / 3)) position = -1;
+        else if (centroidX > (input.width() * 2 / 3)) position = 1;
+
+        telemetry.addData("Position", position);
         telemetry.update();
 
-        Imgproc.putText(input, Imgproc.contourArea(contours.get(0)) + "", new Point((Imgproc.moments(contours.get(0)).m10 / Imgproc.moments(contours.get(0)).m00), (Imgproc.moments(contours.get(0)).m01 / Imgproc.moments(contours.get(0)).m00)), Imgproc.FONT_HERSHEY_PLAIN, 1, new Scalar(0, 255, 255), 1);
+
+        // ---- Visiual Guides ----
+
+        // Split screen into thirds
+        Imgproc.line(input, new Point(input.width() / 3, 0), new Point(input.width() / 3, input.height()), new Scalar(0, 0, 0), 2);
+        Imgproc.line(input, new Point(input.width() * 2 / 3, 0), new Point(input.width() * 2 / 3, input.height()), new Scalar(0, 0, 0), 2);
+
+        // Draw all contours
         Imgproc.drawContours(input, contours, -1, new Scalar(0, 0, 255), 2, 8);
+
+        // Label largest contour with its area
+        Imgproc.putText(input, Imgproc.contourArea(contours.get(0)) + "", new Point(centroidX, centroidY), Imgproc.FONT_HERSHEY_PLAIN, 1, new Scalar(0, 255, 255), 1);
         
         return input;
     }
@@ -81,5 +112,4 @@ public class ScreedVisionPipeline extends OpenCvPipeline {
          * it must be done it quickly.
          */
     }
-
 }
