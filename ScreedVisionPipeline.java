@@ -21,8 +21,7 @@ public class ScreedVisionPipeline extends OpenCvPipeline {
 
     Telemetry telemetry;
 
-    public ScreedVisionPipeline(Telemetry telemetry)
-    {
+    public ScreedVisionPipeline(Telemetry telemetry){
         this.telemetry = telemetry;
     }
 
