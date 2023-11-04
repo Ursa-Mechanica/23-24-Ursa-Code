@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Comparator;
+import java.lang.*;
 
 public class ScreedVisionPipeline extends OpenCvPipeline {
 
@@ -80,10 +81,7 @@ public class ScreedVisionPipeline extends OpenCvPipeline {
         double centroidY = Imgproc.moments(contours.get(0)).m01 / Imgproc.moments(contours.get(0)).m00;
 
         // Detect position of centroid
-        // TODO: Make this cleaner
-        int position = 0;
-        if (centroidX < (input.width() / 3)) position = -1;
-        else if (centroidX > (input.width() * 2 / 3)) position = 1;
+        int position = Math.ceil(x / (input.width() / 3));
 
         telemetry.addData("Position", position);
         telemetry.update();
