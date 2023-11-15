@@ -1,0 +1,98 @@
+package org.firstinspires.teamcode;
+
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.util.ElapsedTime;
+
+import java.lang.Math;
+
+@TeleOp(name="TumlerV3", group="End-Effector Test")
+public class TumlerV3 extends LinearOpMode {
+
+    public ElapsedTime runtime = new ElapsedTime();
+    public ElapsedTime debounce = new ElapsedTime();
+    
+    public IKController controller = new IKController(7.187, 7.365, 1);
+    
+    double targetX, targetY = 0;
+    
+    boolean enableIK = false;
+
+    @Override
+    public void runOpMode() {
+        // CRServo frontLeft = hardwareMap.crservo.get("frontLeft");
+        // CRServo frontRight = hardwareMap.crservo.get("frontRight");
+        // CRServo backLeft = hardwareMap.crservo.get("backLeft");
+        // CRServo backRight = hardwareMap.crservo.get("backRight");
+        
+        // Servo mg = hardwareMap.servo.get("mg");
+        // Servo g2 = hardwareMap.servo.get("g2");
+        
+        
+        double[] angles = controller.calculate(0, 0);
+        
+        telemetry.addData("Theta 1", angles[0]);
+        telemetry.addData("Theta 2", angles[1]);
+        telemetry.update();
+        
+        Servo bottomSeg1 = hardwareMap.servo.get("s1");
+        Servo bottomSeg2 = hardwareMap.servo.get("s2");
+        Servo topSeg = hardwareMap.servo.get("s3");
+        
+        bottomSeg1.setPosition(0);
+        bottomSeg2.setPosition(1);
+        topSeg.setPosition(0);
+        
+        waitForStart();
+
+        if (isStopRequested()) return;
+
+        while(opModeIsActive())
+        {
+            // frontLeft.setPower(gamepad1.left_stick_x);
+            // frontRight.setPower(-gamepad1.left_stick_x);
+            
+            // backLeft.setPower(gamepad1.right_stick_x);
+            // backRight.setPower(-gamepad1.right_stick_x);
+            
+            // mg.setPosition(gamepad2.left_stick_x);
+            // g2.setPosition(gamepad1.right_stick_x);
+            
+            if (gamepad1.y && debounce.milliseconds() > 500) {
+                enableIK = !enableIK;
+                debounce.reset();
+            }
+            
+            if (!enableIK)
+            {
+                bottomSeg1.setPosition(gamepad1.left_trigger * 0.5);
+                bottomSeg2.setPosition(1 - (gamepad1.left_trigger * 0.5));
+                topSeg.setPosition(gamepad1.right_trigger * 0.5);
+            }
+            else
+            {
+                bottomSeg1.setPosition(angles[0] * 0.5);
+                bottomSeg2.setPosition(1 - (angles[0] * 0.5));
+                topSeg.setPosition(angles[1] * 0.5);
+            }
+            
+            if (gamepad1.left_stick_y < -0.5) targetY += 0.01 * runtime.milliseconds();
+            if (gamepad1.left_stick_y > 0.5) targetY -= 0.01 * runtime.milliseconds();
+            if (gamepad1.left_stick_x < -0.5) targetX -= 0.01 * runtime.milliseconds();
+            if (gamepad1.left_stick_x > 0.5) targetX += 0.01 * runtime.milliseconds();
+
+            angles = controller.calculate(targetX, targetY);
+        
+            telemetry.addData("IK Enabled", enableIK);
+            telemetry.addData("\t\tTarget X", "%.2f", targetX);
+            telemetry.addData("\t\tTarget Y", "%.2f", targetY);
+            telemetry.addData("\t\tTheta 1", "%.2f", angles[0]);
+            telemetry.addData("\t\tTheta 2", "%.2f", angles[1]);
+            telemetry.update();
+            
+            runtime.reset();
+        }
+    }
+}
