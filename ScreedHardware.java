@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.CRServo;
@@ -22,14 +23,17 @@ public class ScreedHardware {
     public DcMotor rightBack = null;
     
     public DcMotor m1 = null;
-    public Servo s1, s2 = null;
+    public Servo s1, s2, droneLauncher = null;
     public CRServo cr1 = null;
     
     public DistanceSensor dist = null;
     public TouchSensor limit = null;
     
+    public DistanceSensor distLeft, distRight = null;
+    
     HardwareMap hardwareMap = null;
-
+    BNO055IMU imu = null;
+    
     public void init(HardwareMap ahwMap) {
         hardwareMap = ahwMap;
 
@@ -42,9 +46,23 @@ public class ScreedHardware {
 
         s1 = hardwareMap.servo.get("s1");
         s2 = hardwareMap.servo.get("s2");
+        droneLauncher = hardwareMap.servo.get("s3");
         
-        dist = hardwareMap.get(DistanceSensor.class, "dist");
+        // dist = hardwareMap.get(DistanceSensor.class, "dist");
+        distLeft = hardwareMap.get(DistanceSensor.class, "distLeft");
+        distRight = hardwareMap.get(DistanceSensor.class, "distRight");
         limit = hardwareMap.get(TouchSensor.class, "limit");
+        
+        BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
+
+        parameters.mode                = BNO055IMU.SensorMode.IMU;
+        parameters.angleUnit           = BNO055IMU.AngleUnit.DEGREES;
+        parameters.accelUnit           = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
+        parameters.loggingEnabled      = false;
+        
+        imu = hardwareMap.get(BNO055IMU.class, "imu");
+        
+        imu.initialize(parameters);
         
         leftFront.setDirection(DcMotor.Direction.FORWARD);
         rightFront.setDirection(DcMotor.Direction.FORWARD);
@@ -52,6 +70,8 @@ public class ScreedHardware {
         rightBack.setDirection(DcMotor.Direction.FORWARD);
         
         m1.setDirection(DcMotor.Direction.REVERSE);
+        
+        droneLauncher.setPosition(0);
         
         leftFront.setPower(0);
         rightFront.setPower(0);
