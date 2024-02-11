@@ -19,7 +19,10 @@ public class ScreedTeleOp extends LinearOpMode {
     public ElapsedTime runtime = new ElapsedTime();
     public ElapsedTime debounce = new ElapsedTime();
     
-    boolean grabberOpen, intakeToggle = false;
+    public int intakeToggle = 0;
+    
+    boolean grabberOpen = false;
+    boolean grabberPressed = false;
 
     @Override
     public void runOpMode() {
@@ -28,7 +31,14 @@ public class ScreedTeleOp extends LinearOpMode {
         waitForStart();
         runtime.reset();
 
+        double originPoint = 0;
+
         while (opModeIsActive()) {
+            
+            if (robot.limit.isPressed()) originPoint = robot.m1.getCurrentPosition();
+            
+            telemetry.addData("Origin", originPoint);
+            telemetry.addData("Current", robot.m1.getCurrentPosition());
             
             double rx = gamepad1.left_stick_y;
             double x = gamepad1.left_stick_x;
@@ -36,9 +46,9 @@ public class ScreedTeleOp extends LinearOpMode {
             
             float speedScalar;
             
-            if (gamepad1.left_bumper) speedScalar = 0.1f;
-            else if (gamepad1.left_trigger > 0.1) speedScalar = 0.4f;
-            else if (gamepad1.right_bumper) speedScalar = 1.0f;
+            if (gamepad1.left_bumper) speedScalar = 0.15f;
+            else if (gamepad1.left_trigger > 0.1f) speedScalar = 0.4f;
+            else if (gamepad1.right_trigger > 0.1f) speedScalar = 1.0f;
             else speedScalar = 0.75f;
 
             robot.leftFront.setPower((y - x + rx) * speedScalar);
@@ -54,29 +64,41 @@ public class ScreedTeleOp extends LinearOpMode {
             if (robot.limit.isPressed()) armSpeed = Math.min(0, armSpeed);
             
             // if (robot.dist.getDistance(DistanceUnit.CM) < 8) armSpeed = Math.max(-0.2, armSpeed);
-            if (robot.dist.getDistance(DistanceUnit.CM) < 25) armSpeed = Math.min(0.1, armSpeed);
+            // if (robot.dist.getDistance(DistanceUnit.CM) < 25 && !gamepad2.left_bumper) armSpeed = Math.min(0.15, armSpeed);
             
             robot.m1.setPower(armSpeed);
             
-            robot.s1.setPosition(grabberOpen ? 0.18 : 0);
-            robot.s2.setPosition(intakeToggle ? 1 : 0.5);
+            robot.s1.setPosition(grabberOpen ? 0.19 : 0);
+            robot.s2.setPosition((intakeToggle / 2.0f) + 0.5f);
+            
+            if (gamepad1.x && gamepad2.x) robot.droneLauncher.setPosition(1);
+            
+            if (gamepad2.a || gamepad1.a) robot.droneLauncher.setPosition(0);
             
             // Toggle Buttons
             
-            if (gamepad2.b && debounce.milliseconds() > 500)
+            if (gamepad2.b && grabberPressed == false)
             {
                 grabberOpen = !grabberOpen;
+                grabberPressed = true;
+                debounce.reset();
+            } else if (!gamepad2.b) grabberPressed = false;
+            
+            if (gamepad2.dpad_up && debounce.milliseconds() > 250)
+            {
+                intakeToggle = (intakeToggle != 0) ? 0 : 1;
                 debounce.reset();
             }
             
-            if (gamepad2.dpad_up && debounce.milliseconds() > 500)
+            if (gamepad2.dpad_down && debounce.milliseconds() > 250)
             {
-                intakeToggle = !intakeToggle;
+                intakeToggle = (intakeToggle != 0) ? 0 : -1;
                 debounce.reset();
             }
             
             telemetry.addData("Grabber", grabberOpen);
-            telemetry.addData("Distance", "%.3f, %.3f", robot.dist.getDistance(DistanceUnit.CM), armSpeed);
+            telemetry.addData("intakeToggle", intakeToggle);
+            // telemetry.addData("Distance", "%.3f, %.3f", robot.dist.getDistance(DistanceUnit.CM), armSpeed);
             telemetry.addData("Limit", robot.limit.isPressed());
             telemetry.update();
         }
