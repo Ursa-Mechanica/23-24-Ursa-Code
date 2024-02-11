@@ -40,6 +40,7 @@ public class ScreedAuto extends LinearOpMode
         // vision.setProcessorEnabled(screedProcessor, true);
         
         boolean isBlue = false;
+        boolean isBackstage = false;
         
         initMotors();
         
@@ -47,6 +48,9 @@ public class ScreedAuto extends LinearOpMode
         while (!opModeIsActive() || !robot.imu.isGyroCalibrated()) {
             if (gamepad1.x) isBlue = true;
             else if (gamepad1.b) isBlue = false;
+
+            if (gamepad1.dpad_up) isBackstage = true;
+            else if (gamepad1.dpad_down) isBackstage = false;
             
             idle();
             
@@ -97,30 +101,33 @@ public class ScreedAuto extends LinearOpMode
                 break;
         }
         
-        // align to wall
-        autoLevel(20);
-        
-        rotate(90 * (isBlue ? -1 : 1), 0.5);
-        
-        encoderDrive(0.6, 0.6, -32, -32, -32, -32, 5.0);
-        
-        if (!isBlue) encoderDrive(0.6, 0.6, 18, -18, -18, 18, 5.0);
-        else encoderDrive(0.6, 0.6, -18, 18, 18, -18, 5.0);
-        
-        autoLevel(5.0);
-        
-        robot.m1.setPower(-0.4);
-        
-        while (opModeIsActive() && robot.m1.getCurrentPosition() > origin - 4000);
-        
-        robot.m1.setPower(0);
-        sleep(250);
-        robot.s1.setPosition(0);
-        sleep(250);
-        
-        encoderDrive(0.6, 0.6, 4, 4, 4, 4, 2.0);
-        if (!isBlue) encoderDrive(0.6, 0.6, -18, 18, 18, -18, 5.0);
-        else encoderDrive(0.6, 0.6, 18, -18, -18, 18, 5.0);
+        if (isBackstage)
+        {
+            // align to wall
+            autoLevel(20);
+            
+            rotate(90 * (isBlue ? -1 : 1), 0.5);
+            
+            encoderDrive(0.6, 0.6, -32, -32, -32, -32, 5.0);
+            
+            if (!isBlue) encoderDrive(0.6, 0.6, 18, -18, -18, 18, 5.0);
+            else encoderDrive(0.6, 0.6, -18, 18, 18, -18, 5.0);
+            
+            autoLevel(5.0);
+            
+            robot.m1.setPower(-0.4);
+            
+            while (opModeIsActive() && robot.m1.getCurrentPosition() > origin - 4000);
+            
+            robot.m1.setPower(0);
+            sleep(250);
+            robot.s1.setPosition(0);
+            sleep(250);
+            
+            encoderDrive(0.6, 0.6, 4, 4, 4, 4, 2.0);
+            if (!isBlue) encoderDrive(0.6, 0.6, -18, 18, 18, -18, 5.0);
+            else encoderDrive(0.6, 0.6, 18, -18, -18, 18, 5.0);
+        }
         
         sleep(250);
         
