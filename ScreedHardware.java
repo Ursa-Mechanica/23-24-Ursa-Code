@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
@@ -23,7 +24,8 @@ public class ScreedHardware {
     public DcMotor rightBack = null;
     
     public DcMotor m1 = null;
-    public Servo s1, s2, droneLauncher = null;
+    public DcMotorEx winch, lifter = null;
+    public Servo s1, s2, wrist, spinner, droneLauncher = null;
     public CRServo cr1 = null;
     
     public DistanceSensor dist = null;
@@ -43,12 +45,16 @@ public class ScreedHardware {
         rightBack = hardwareMap.dcMotor.get("back_right");
         
         m1 = hardwareMap.dcMotor.get("m1");
+        winch = hardwareMap.get(DcMotorEx.class, "winch");
+        lifter = hardwareMap.get(DcMotorEx.class, "lifter");
 
         s1 = hardwareMap.servo.get("s1");
         s2 = hardwareMap.servo.get("s2");
+        wrist = hardwareMap.servo.get("wrist");
+        spinner = hardwareMap.servo.get("spinner");
         droneLauncher = hardwareMap.servo.get("s3");
         
-        // dist = hardwareMap.get(DistanceSensor.class, "dist");
+        dist = hardwareMap.get(DistanceSensor.class, "dist");
         distLeft = hardwareMap.get(DistanceSensor.class, "distLeft");
         distRight = hardwareMap.get(DistanceSensor.class, "distRight");
         limit = hardwareMap.get(TouchSensor.class, "limit");
@@ -83,6 +89,7 @@ public class ScreedHardware {
         leftBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         m1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        winch.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         
         leftFront.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         rightFront.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
