@@ -23,7 +23,7 @@ public class ScreedHardware {
     public DcMotor leftBack = null;
     public DcMotor rightBack = null;
     
-    public DcMotor m1 = null;
+    public DcMotor m1, intake = null;
     public DcMotorEx winch, lifter = null;
     public Servo s1, s2, wrist, spinner, droneLauncher = null;
     public CRServo cr1 = null;
@@ -52,6 +52,7 @@ public class ScreedHardware {
         s2 = hardwareMap.servo.get("s2");
         wrist = hardwareMap.servo.get("wrist");
         spinner = hardwareMap.servo.get("spinner");
+        intake = hardwareMap.dcMotor.get("intake");
         droneLauncher = hardwareMap.servo.get("s3");
         
         dist = hardwareMap.get(DistanceSensor.class, "dist");
@@ -95,5 +96,16 @@ public class ScreedHardware {
         rightFront.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         leftBack.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         rightBack.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+    }
+    
+    void zeroArm(boolean opModeIsActive)
+    {
+        m1.setPower(0.15); // lower arm
+        
+        while (opModeIsActive && !limit.isPressed()) {
+            // sleep(10);
+        }
+        
+        m1.setPower(0);
     }
 }
