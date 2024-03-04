@@ -22,9 +22,7 @@ public class ScreedTeleOp extends LinearOpMode {
     
     public int intakeToggle, spinPos = 0;
     public double wristPos = 0.5;
-    public double[] spinPositions = new double[]{0.175, 0.3725, 0.57};
-    public double spinLeft = 0.175;
-    public double spinRight = 0.57;
+    public double[] spinPositions = new double[]{0.15, 0.3725, 0.53};
     public double armPos = 0;
     
     public boolean isArmUp = false;
@@ -95,7 +93,7 @@ public class ScreedTeleOp extends LinearOpMode {
             robot.s1.setPosition(grabberOpen ? 0.38 : 0);
             // robot.s1.setPosition(grabberOpen ? 0.19 : 0);
             // robot.s1.setPosition(grabberOpen ? .125 : .2);
-            robot.s2.setPosition((intakeToggle / 2.0f) + 0.5f);
+            robot.intake.setPower(intakeToggle);
             
             if (armPos != robot.m1.getCurrentPosition())
             {
@@ -124,7 +122,7 @@ public class ScreedTeleOp extends LinearOpMode {
             }
             
             robot.spinner.setPosition(spinPositions[spinPos]);
-            
+
             // ----- Drone -----
             if (gamepad1.x && gamepad2.x) robot.droneLauncher.setPosition(1);
             
@@ -134,7 +132,7 @@ public class ScreedTeleOp extends LinearOpMode {
             if (enableLifting) {
                 if (gamepad1.dpad_up) // go up
                 {
-                    robot.lifter.setPower(0.45);
+                    robot.lifter.setPower(0.6);
                     robot.winch.setPower(-1);
                 } else if (gamepad1.dpad_down) {
                     robot.lifter.setPower(0.05);
@@ -168,13 +166,13 @@ public class ScreedTeleOp extends LinearOpMode {
             
             if (gamepad2.dpad_up && debounce.milliseconds() > 250)
             {
-                intakeToggle = (intakeToggle != 0) ? 0 : 1;
+                intakeToggle = (intakeToggle != 0) ? 0 : -1;
                 debounce.reset();
             }
             
             if (gamepad2.dpad_down && debounce.milliseconds() > 250)
             {
-                intakeToggle = (intakeToggle != 0) ? 0 : -1;
+                intakeToggle = (intakeToggle != 0) ? 0 : 1;
                 debounce.reset();
             }
             
@@ -190,7 +188,8 @@ public class ScreedTeleOp extends LinearOpMode {
     {
         double y = a * (x + b) * (x + b) + 0.407569f;
         
-        if (x <= 1700) y = 0.53;
+        if (x <= 1700) y = 0.4;
+        if (x >= 500 && x <= 1700) y = 0.44;
         
         return y;
     }
