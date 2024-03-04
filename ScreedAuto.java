@@ -27,7 +27,9 @@ public class ScreedAuto extends LinearOpMode
     
     static final double COUNTS_PER_INCH = 58.639;
     Orientation referenceAngle = new Orientation();
-    double globalAngle;
+    double globalAngle, origin;
+    
+    boolean isBlue, isBackstage = true;
     
     @Override
     public void runOpMode()
@@ -39,41 +41,41 @@ public class ScreedAuto extends LinearOpMode
         
         // vision.setProcessorEnabled(screedProcessor, true);
         
-        boolean isBlue = false;
-        boolean isBackstage = false;
-        
         initMotors();
         
-        // select colors
+        // configure autonomous
         while (!opModeIsActive() || !robot.imu.isGyroCalibrated()) {
             if (gamepad1.x) isBlue = true;
             else if (gamepad1.b) isBlue = false;
-
-            if (gamepad1.dpad_up) isBackstage = true;
-            else if (gamepad1.dpad_down) isBackstage = false;
+            
+            if (gamepad1.dpad_left) isBackstage = true;
+            else if (gamepad1.dpad_right) isBackstage = false;
             
             idle();
             
             telemetry.addData("Color", isBlue ? "Blue" : "Red");
+            telemetry.addData("Location", isBackstage ? "Backdrop Side" : "Wing Side");
             telemetry.addData("IMU Status", robot.imu.getCalibrationStatus().toString());
             telemetry.update();
         }
         
         screedProcessor.setColor(isBlue);
-    
+        
         waitForStart();
         vision.setProcessorEnabled(screedProcessor, true);
         
-        robot.m1.setPower(0.15); // lower arm
+        robot.wrist.setPosition(0.4);
+        robot.s1.setPosition(0);
+        sleep(250);
         
-        while (opModeIsActive() && !robot.limit.isPressed()) {
-            sleep(10);
-        }
+        robot.zeroArm(opModeIsActive());
+        origin = robot.m1.getCurrentPosition();
         
-        robot.m1.setPower(0);
-        robot.s1.setPosition(0.19); // open grabber
+        robot.s1.setPosition(0.4); // open grabber
         
-        double origin = robot.m1.getCurrentPosition();
+        sleep(500);
+        
+        moveArm(-0.4, 1000);
         
         runtime.reset();
         while (opModeIsActive() && runtime.seconds() < 2) {
@@ -81,7 +83,9 @@ public class ScreedAuto extends LinearOpMode
             telemetry.update();
         }
         
-        switch (screedProcessor.getPosition())
+        int position = screedProcessor.getPosition();
+        
+        switch (position)
         {
             case -1: // left
                 encoderDrive(0.6, 0.6, 6, 6, 6, 6, 5.0);
@@ -101,8 +105,7 @@ public class ScreedAuto extends LinearOpMode
                 break;
         }
         
-        if (isBackstage)
-        {
+        if (isBackstage) {
             // align to wall
             autoLevel(20);
             
@@ -110,28 +113,68 @@ public class ScreedAuto extends LinearOpMode
             
             encoderDrive(0.6, 0.6, -32, -32, -32, -32, 5.0);
             
-            if (!isBlue) encoderDrive(0.6, 0.6, 18, -18, -18, 18, 5.0);
-            else encoderDrive(0.6, 0.6, -18, 18, 18, -18, 5.0);
+            // if (!isBlue) encoderDrive(0.6, 0.6, 18, -18, -18, 18, 5.0);
+            // else encoderDrive(0.6, 0.6, -18, 18, 18, -18, 5.0);
+
+            float dist = (position + 2) * 4f;            
+            if (isBlue) {
+                robot.leftFront.setPower(-0.6);
+                robot.leftBack.setPower(0.6);
+                robot.rightFront.setPower(0.6);
+                robot.rightBack.setPower(-0.6);
+        
+                while (robot.distLeft.getDistance(DistanceUnit.CM) >= 30) { sleep(10); }
+
+                robot.leftFront.setPower(0);
+                robot.leftBack.setPower(0);
+                robot.rightFront.setPower(0);
+                robot.rightBack.setPower(0);
+                
+                sleep(250);
+                
+                encoderDrive(0.6, 0.6, -dist, dist, dist, -dist, 5.0);
+            } else {
+                robot.leftFront.setPower(0.6);
+                robot.leftBack.setPower(-0.6);
+                robot.rightFront.setPower(-0.6);
+                robot.rightBack.setPower(0.6);
+        
+                while (robot.distRight.getDistance(DistanceUnit.CM) >= 30) { sleep(10); }
+
+                robot.leftFront.setPower(0);
+                robot.leftBack.setPower(0);
+                robot.rightFront.setPower(0);
+                robot.rightBack.setPower(0);
+                
+                sleep(250);
+        
+                encoderDrive(0.6, 0.6, dist, -dist, -dist, dist, 5.0);
+            }
             
-            autoLevel(5.0);
+            autoLevel(24.0);
             
-            robot.m1.setPower(-0.4);
-            
-            while (opModeIsActive() && robot.m1.getCurrentPosition() > origin - 4000);
-            
-            robot.m1.setPower(0);
+            robot.wrist.setPosition(1);
+            moveArm(-0.4, 7000);
+            sleep(250);
+            autoLevel(16.0);
             sleep(250);
             robot.s1.setPosition(0);
             sleep(250);
             
             encoderDrive(0.6, 0.6, 4, 4, 4, 4, 2.0);
-            if (!isBlue) encoderDrive(0.6, 0.6, -18, 18, 18, -18, 5.0);
-            else encoderDrive(0.6, 0.6, 18, -18, -18, 18, 5.0);
+            // if (!isBlue) encoderDrive(0.6, 0.6, -18, 18, 18, -18, 5.0);
+            // else encoderDrive(0.6, 0.6, 18, -18, -18, 18, 5.0);
         }
         
         sleep(250);
         
         vision.close();
+    }
+    
+    public void moveArm(double speed, double ticks) {
+        robot.m1.setPower(speed);
+        while (opModeIsActive() && robot.m1.getCurrentPosition() > origin - ticks);
+        robot.m1.setPower(0);
     }
     
     public void encoderDrive(double speedL, double speedR,
@@ -216,6 +259,11 @@ public class ScreedAuto extends LinearOpMode
         double leftPower = power;
         double rightPower = power;
         
+        robot.leftFront.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        robot.rightFront.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        robot.leftBack.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        robot.rightBack.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        
         // left is positive
         while (opModeIsActive() && (getAngle() > degrees + 5 || getAngle() < degrees - 5))
         {
@@ -247,9 +295,14 @@ public class ScreedAuto extends LinearOpMode
     
     private void autoLevel(double targetDist)
     {
-        double error = 2.0;
+        double error = 1.0;
         
         boolean leftCheck = false, rightCheck = false;
+        
+        robot.leftFront.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        robot.rightFront.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        robot.leftBack.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        robot.rightBack.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         
         while (opModeIsActive() && (!leftCheck && !rightCheck))
         {
@@ -352,5 +405,10 @@ public class ScreedAuto extends LinearOpMode
         robot.rightFront.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         robot.leftBack.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         robot.rightBack.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        
+        robot.leftFront.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        robot.rightFront.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        robot.leftBack.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        robot.rightBack.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
     }
 }
