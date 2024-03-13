@@ -35,6 +35,7 @@ public class ScreedTeleOp extends LinearOpMode {
     boolean grabberPressed = false;
     boolean enableLifting = false;
     boolean liftToggle = false;
+    boolean launcherToggle = false;
 
     @Override
     public void runOpMode() {
@@ -90,7 +91,7 @@ public class ScreedTeleOp extends LinearOpMode {
             
             robot.m1.setPower(armSpeed);
             
-            robot.s1.setPosition(grabberOpen ? 0.38 : 0);
+            robot.s1.setPosition(grabberOpen ? 0.4 : 0);
             // robot.s1.setPosition(grabberOpen ? 0.19 : 0);
             // robot.s1.setPosition(grabberOpen ? .125 : .2);
             robot.intake.setPower(intakeToggle);
@@ -125,8 +126,10 @@ public class ScreedTeleOp extends LinearOpMode {
 
             // ----- Drone -----
             if (gamepad1.x && gamepad2.x) robot.droneLauncher.setPosition(1);
+            else robot.droneLauncher.setPosition(0);
             
-            if (gamepad2.a || gamepad1.a) robot.droneLauncher.setPosition(0);
+            if (launcherToggle) robot.droneAngle.setPosition(0.15);
+            else robot.droneAngle.setPosition(0.3);
             
             // ----- Lifting mechanism -----
             if (enableLifting) {
@@ -147,6 +150,11 @@ public class ScreedTeleOp extends LinearOpMode {
             }
             
             // Toggle Buttons
+            
+            if (gamepad2.a && gamepad1.a && debounce.milliseconds() > 250) {
+                debounce.reset();
+                launcherToggle = !launcherToggle;
+            }
             
             if (wristPos > 1) wristPos = 1;
             if (wristPos < 0) wristPos = 0;
