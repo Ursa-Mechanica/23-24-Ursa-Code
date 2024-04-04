@@ -36,6 +36,7 @@ public class ScreedTeleOp extends LinearOpMode {
     boolean enableLifting = false;
     boolean liftToggle = false;
     boolean launcherToggle = false;
+    boolean autoLevelMode = false;
 
     @Override
     public void runOpMode() {
@@ -148,6 +149,21 @@ public class ScreedTeleOp extends LinearOpMode {
                 robot.lifter.setPower(0);
                 robot.winch.setPower(0);
             }
+
+            // Auto Level Mode
+            if (gamepad1.left_stick_button && debounce.milliseconds() > 250) {
+                debounce.reset();
+                autoLevelMode = true;
+            }
+
+            while(autoLevelMode && opModeIsActive()) {
+                autoLevel(20);
+
+                if (gamepad1.left_stick_button && debounce.milliseconds() > 250) {
+                    debounce.reset();
+                    autoLevelMode = false;;
+                }
+            }
             
             // Toggle Buttons
             
@@ -200,6 +216,36 @@ public class ScreedTeleOp extends LinearOpMode {
         if (x >= 500 && x <= 1700) y = 0.44;
         
         return y;
+    }
+
+    private void autoLevel(double targetDist)
+    {
+        if (robot.distLeft.getDistance(DistanceUnit.CM) > targetDist + error)
+        {
+            robot.leftFront.setPower(-0.25);
+            robot.leftBack.setPower(-0.25);
+        } else if (robot.distLeft.getDistance(DistanceUnit.CM) < targetDist - error)
+        {
+            robot.leftFront.setPower(0.25);
+            robot.leftBack.setPower(0.25);
+        } else
+        {
+            robot.leftFront.setPower(0);
+            robot.leftBack.setPower(0);
+        }
+        if (robot.distRight.getDistance(DistanceUnit.CM) > targetDist + error)
+        {
+            robot.rightFront.setPower(-0.25);
+            robot.rightBack.setPower(-0.25);
+        } else if (robot.distRight.getDistance(DistanceUnit.CM) < targetDist - error)
+        {
+            robot.rightFront.setPower(0.25);
+            robot.rightBack.setPower(0.25);
+        } else
+        {
+            robot.rightFront.setPower(0);
+            robot.rightBack.setPower(0);
+        }
     }
     
     double lerp(double a, double b, double f)
